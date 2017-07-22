@@ -7,14 +7,13 @@ import cPickle
 import vgg16
 import unet
 import densenet
-from constants import PATH_TO_VGG16_WEIGHTS
 
 
-def set_pretrained_weights(net, path_to_model_weights=PATH_TO_VGG16_WEIGHTS):
-    # Set out weights
-    vgg16 = cPickle.load(open(path_to_model_weights))
-    num_elements_to_set = 26  # Number of W and b elements for the first convolutional layers
-    lasagne.layers.set_all_param_values(net['conv5_3'], vgg16['param values'][:num_elements_to_set])
+#def set_pretrained_weights(net, path_to_model_weights=PATH_TO_VGG16_WEIGHTS):
+#    # Set out weights
+#    vgg16 = cPickle.load(open(path_to_model_weights))
+#    num_elements_to_set = 26  # Number of W and b elements for the first convolutional layers
+#    lasagne.layers.set_all_param_values(net['conv5_3'], vgg16['param values'][:num_elements_to_set])
 
 
 def build_encoder(input_height, input_width, input_var):

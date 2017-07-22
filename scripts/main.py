@@ -9,10 +9,9 @@ import theano.tensor as T
 import lasagne
 from sympy.utilities.iterables import cartes
 from tqdm import tqdm
-from constants import *
 from models.model_salgan import ModelSALGAN
 from models.model_bce import ModelBCE
-from utils import *
+from evaluation import Evaluation
 import pdb
 import matplotlib
 import argparse
@@ -174,6 +173,12 @@ def main(args):
             seg_map = np.clip(seg_map , 0, 255)
 
             cv2.imwrite(os.path.join(args.resdir, curr_file + '_'+ args.arch +'.bmp'), seg_map)
+
+    elif args.mode == 'eval':
+        evaluator = Evaluation()
+
+        evaluator(args.gtdir, args.resdir, 'unet')
+        evaluator.print_vals()
 
 
 

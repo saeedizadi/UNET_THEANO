@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import glob
 from tqdm import tqdm
-import sklearn.metrics.confusion_matrix as confusion_matrix
+from sklearn.metrics import confusion_matrix
 
 
 class Evaluation():
@@ -18,7 +18,7 @@ class Evaluation():
 
         listImgFiles = [k.split('/')[-1].split('.')[0] for k in glob.glob(os.path.join(gtdir, 'val_*.bmp'))]
         for currFile in tqdm(listImgFiles):
-            res = np.float32(cv2.imread(os.path.join(resdir, currFile + resprefix + '.bmp'), cv2.IMREAD_GRAYSCALE)) / 255
+            res = np.float32(cv2.imread(os.path.join(resdir, currFile + '_' + resprefix + '.bmp'), cv2.IMREAD_GRAYSCALE)) / 255
             gt = np.float32(cv2.imread(os.path.join(gtdir, currFile + '.bmp'), cv2.IMREAD_GRAYSCALE)) / 255
 
             self.jaccard_score += self.jaccard_similarity_coefficient(gt, res)
@@ -34,6 +34,12 @@ class Evaluation():
         self.sens /= len(listImgFiles)
         self.acc /= len(listImgFiles)
 
+    def print_vals(self):
+        print('DiceCoefficient: {}\n'
+              'JaccardIndex: {}\n'
+              'Specificity: {}\n'
+              'Sensitivity: {}\n'
+              'Accuracy: {}'.format(self.dice, self.jaccard_score, self.spec, self.sens, self.acc))
 
     def dice_coefficient(self, gt, res):
         A = gt.flatten()
