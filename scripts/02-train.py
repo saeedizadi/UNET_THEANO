@@ -131,7 +131,7 @@ def main(args):
         # Create network
         if args.model == 'salgan':
 
-            model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.alpha]
+            model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.momentum]
             model = ModelSALGAN(*model_args)
 
             if args.resume:
@@ -140,7 +140,7 @@ def main(args):
             #salgan_batch_iterator(model, train_data, validation_data,epochs=args.num_epochs)
 
         elif args.model == 'bce':
-            model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.alpha]
+            model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.momentum]
             model = ModelBCE(*model_args)
 
             if args.resume:
@@ -152,7 +152,9 @@ def main(args):
 
     elif args.mode == 'eval':
         model = ModelBCE()
-        load_weights(net=model.net['output'], path='weights/gen_', epochtoload=args.test_epoch)
+        with np.load('../weights/gen_' + "modelWeights{:04d}.npz".format(args.test_epoch)) as f:
+            param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+        lasagne.layers.set_all_param_values(model.net['output'], param_values)
 
         list_img_files = [k.split('/')[-1].split('.')[0] for k in glob.glob(os.path.join(args.path_test_imgs, 'val_*.bmp'))]
         for curr_file in tqdm(list_img_files):
@@ -240,7 +242,8 @@ if __name__ == "__main__":
     parser_train = subparsers.add_parser('train')
     parser_train.add_argument('--trainset', default='../data/pickle320x240/trainData.pickle')
     parser_train.add_argument('--valset', default='../data/pickle320x240/validationData.pickle')
-    parser_train.add_argument('--lr', default=0.01, type=float)
+    parser_train.add_argument('--lr', default=0.05, type=float)
+    parser_train.add_argument('--momentum', default=0.99, type=float)
     parser_train.add_argument('--regul-term', default=1e-05, type=float)
     parser_train.add_argument('--alpha', default=0.2, type=float)
     parser_train.add_argument('--batch-size', default=10, type=int)
@@ -253,6 +256,8 @@ if __name__ == "__main__":
     parser_eval.add_argument('--test-epoch', default=10, type=int)
     parser_eval.add_argument('--path-test-imgs', default='../data/image320x240/', type=str)
     parser_eval.add_argument('--path-res-imgs', default='../data/results', type=str)
+    parser_eval.add_argument('--width', default=320, type=int)
+    parser_eval.add_argument('--height', default=240, type=int)
 
 
     main(parser.parse_args())

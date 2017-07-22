@@ -19,7 +19,7 @@ def load_weights(net, path, epochtoload):
     :param net: model object
     :param path: path of the weights to be set
     """
-    with np.load(HOME_DIR + path + "modelWeights{:04d}.npz".format(epochtoload)) as f:
+    with np.load(path + "modelWeights{:04d}.npz".format(epochtoload)) as f:
         param_values = [f['arr_%d' % i] for i in range(len(f.files))]
     lasagne.layers.set_all_param_values(net, param_values)
 
