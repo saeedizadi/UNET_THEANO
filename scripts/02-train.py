@@ -16,6 +16,7 @@ from utils import *
 import pdb
 import matplotlib
 import argparse
+import glob
 
 #####################################
 #To bypass X11 for matplotlib in tmux
@@ -24,7 +25,6 @@ import matplotlib.pyplot as plt
 #####################################
 
 def bce_batch_iterator(model, train_data, validation_data, epochs = 10, fig=False):
-
     num_epochs = epochs+1
     n_updates = 1
     nr_batches_train = int(len(train_data) / model.batch_size)
@@ -115,38 +115,61 @@ def bce_batch_iterator(model, train_data, validation_data, epochs = 10, fig=Fals
 
 def main(args):
 
-    print 'Loading training data...'
-    with open(args.trainset, 'rb') as f:
-        train_data = pickle.load(f)
-    print '-->done!'
-
-    print 'Loading test data...'
-    with open(args.valset, 'rb') as f:
-        validation_data = pickle.load(f)
-    print '-->done!'
 
 
-    # Create network
-    if args.model == 'salgan':
+    if args.mode == 'train':
+        print 'Loading training data...'
+        with open(args.trainset, 'rb') as f:
+            train_data = pickle.load(f)
+        print '-->done!'
 
-        model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.alpha]
-        model = ModelSALGAN(*model_args)
+        print 'Loading test data...'
+        with open(args.valset, 'rb') as f:
+            validation_data = pickle.load(f)
+        print '-->done!'
 
-        if args.resume:
-            load_weights(net=model.net['output'], path="weights/gen_", epochtoload=args.resume)
-            load_weights(net=model.discriminator['fc5'], path="weights/disrim_", epochtoload=args.resume)
-        #salgan_batch_iterator(model, train_data, validation_data,epochs=args.num_epochs)
+        # Create network
+        if args.model == 'salgan':
 
-    elif args.model == 'bce':
-        model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.alpha]
-        model = ModelBCE(*model_args)
+            model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.alpha]
+            model = ModelSALGAN(*model_args)
 
-        if args.resume:
-            load_weights(net=model.net['output'], path='weights/gen_', epochtoload=args.resume)
-        bce_batch_iterator(model, train_data, validation_data,epochs=args.num_epochs)
+            if args.resume:
+                load_weights(net=model.net['output'], path="weights/gen_", epochtoload=args.resume)
+                load_weights(net=model.discriminator['fc5'], path="weights/disrim_", epochtoload=args.resume)
+            #salgan_batch_iterator(model, train_data, validation_data,epochs=args.num_epochs)
 
-    else:
-        print "Invalid Model Argument."
+        elif args.model == 'bce':
+            model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.alpha]
+            model = ModelBCE(*model_args)
+
+            if args.resume:
+                load_weights(net=model.net['output'], path='weights/gen_', epochtoload=args.resume)
+            bce_batch_iterator(model, train_data, validation_data,epochs=args.num_epochs)
+
+        else:
+            print "Invalid Model Argument."
+
+    elif args.mode == 'eval':
+        model = ModelBCE()
+        load_weights(net=model.net['output'], path='weights/gen_', epochtoload=args.test_epoch)
+
+        list_img_files = [k.split('/')[-1].split('.')[0] for k in glob.glob(os.path.join(args.path_test_imgs, 'val_*.bmp'))]
+        for curr_file in tqdm(list_img_files):
+            img = cv2.cvtColor(cv2.imread(os.path.join(args.path_test_imgs, curr_file + '.bmp'), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+
+            img = cv2.resize(img, (args.width, args.height), interpolation=cv2.INTER_AREA)
+
+            blob = np.zeros((1, 3, args.height, args.width), theano.config.floatX)
+            blob[0, ...] = (img.astype(theano.config.floatX).transpose(2, 0, 1))
+
+            result = np.squeeze(model.predictFunction(blob))
+            seg_map = (result * 255).astype(np.uint8)
+
+            seg_map = cv2.resize(seg_map , (args.width, args.height), interpolation=cv2.INTER_CUBIC)
+            seg_map = np.clip(seg_map , 0, 255)
+
+            cv2.imwrite(os.path.join(args.path_res_imgs, curr_file + '_unet.png'), seg_map)
 
 
 # def cross_val(args):
@@ -226,13 +249,18 @@ if __name__ == "__main__":
     parser_train.add_argument('--height', default=240, type=int)
     parser_train.add_argument('--resume', type=int, required=False)
 
+    parser_eval = subparsers.add_parser('eval')
+    parser_eval.add_argument('--test-epoch', default=10, type=int)
+    parser_eval.add_argument('--path-test-imgs', default='../data/image320x240/', type=str)
+    parser_eval.add_argument('--path-res-imgs', default='../data/results', type=str)
+
 
     main(parser.parse_args())
 
 
 
 
-#    parser_train = subparsers.add_parser('eval')
+
 
     #parser_train = subparsers.add_parser('crossval')
 
