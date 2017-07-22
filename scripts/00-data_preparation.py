@@ -1,20 +1,10 @@
 import os
 import numpy as np
-from PIL import Image
-from PIL import ImageOps
-from scipy import misc
-import scipy.io
-from skimage import io
-import sys
-import cPickle as pickle
 import glob
-import random
 from tqdm import tqdm
-from eliaLib import dataRepresentation
 from constants import *
 from PIL import Image
 from PIL import ImageOps
-import pdb
 
 
 def augment_data():

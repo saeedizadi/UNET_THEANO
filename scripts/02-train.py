@@ -113,10 +113,12 @@ def bce_batch_iterator(model, train_data, validation_data, epochs = 10, fig=Fals
 #     return v_cost, v_acc
 
 
+def load_weights(net, path, epochtoload):
+    with np.load(path  + "modelWeights{:04d}.npz".format(epochtoload)) as f:
+        param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+    lasagne.layers.set_all_param_values(net['output'], param_values)
+
 def main(args):
-
-
-
     if args.mode == 'train':
         print 'Loading training data...'
         with open(args.trainset, 'rb') as f:
@@ -150,15 +152,15 @@ def main(args):
         else:
             print "Invalid Model Argument."
 
-    elif args.mode == 'eval':
+    elif args.mode == 'test':
         model = ModelBCE()
         with np.load('../weights/gen_' + "modelWeights{:04d}.npz".format(args.test_epoch)) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
         lasagne.layers.set_all_param_values(model.net['output'], param_values)
 
-        list_img_files = [k.split('/')[-1].split('.')[0] for k in glob.glob(os.path.join(args.path_test_imgs, 'val_*.bmp'))]
+        list_img_files = [k.split('/')[-1].split('.')[0] for k in glob.glob(os.path.join(args.imgdir, 'val_*.bmp'))]
         for curr_file in tqdm(list_img_files):
-            img = cv2.cvtColor(cv2.imread(os.path.join(args.path_test_imgs, curr_file + '.bmp'), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+            img = cv2.cvtColor(cv2.imread(os.path.join(args.imgdir, curr_file + '.bmp'), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
 
             img = cv2.resize(img, (args.width, args.height), interpolation=cv2.INTER_AREA)
 
@@ -171,7 +173,10 @@ def main(args):
             seg_map = cv2.resize(seg_map , (args.width, args.height), interpolation=cv2.INTER_CUBIC)
             seg_map = np.clip(seg_map , 0, 255)
 
-            cv2.imwrite(os.path.join(args.path_res_imgs, curr_file + '_unet.png'), seg_map)
+            cv2.imwrite(os.path.join(args.resdir, curr_file + '_'+ args.arch +'.bmp'), seg_map)
+
+
+
 
 
 # def cross_val(args):
@@ -252,12 +257,18 @@ if __name__ == "__main__":
     parser_train.add_argument('--height', default=240, type=int)
     parser_train.add_argument('--resume', type=int, required=False)
 
+    parser_test = subparsers.add_parser('test')
+    parser_test.add_argument('--test-epoch', default=10, type=int)
+    parser_test.add_argument('--imgdir', default='../data/image320x240/', type=str)
+    parser_test.add_argument('--resdir', default='../data/results', type=str)
+    parser_test.add_argument('--width', default=320, type=int)
+    parser_test.add_argument('--height', default=240, type=int)
+    parser_test.add_argument('--arch', default='unet', type=str)
+
     parser_eval = subparsers.add_parser('eval')
-    parser_eval.add_argument('--test-epoch', default=10, type=int)
-    parser_eval.add_argument('--path-test-imgs', default='../data/image320x240/', type=str)
-    parser_eval.add_argument('--path-res-imgs', default='../data/results', type=str)
-    parser_eval.add_argument('--width', default=320, type=int)
-    parser_eval.add_argument('--height', default=240, type=int)
+    parser_eval.add_argument('--resdir', type=str, default='../data/results')
+    parser_eval.add_argument('--gtdir', type=str, default='../data/mask320x240')
+    
 
 
     main(parser.parse_args())
