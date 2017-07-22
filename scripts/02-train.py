@@ -50,11 +50,11 @@ def bce_batch_iterator(model, train_data, validation_data, epochs = 10, fig=Fals
 
         e_cost /= nr_batches_train
 
-        print('Epoch: [{0:02}/{1}]\t'
+        print('\tEpoch: [{0:02}/{1}]\t'
               'TrainCost: {2}'.format(current_epoch, num_epochs, e_cost))
 
         if current_epoch % 5 == 0:
-            np.savez('weights/gen_modelWeights{:04d}.npz'.format(current_epoch),
+            np.savez('../weights/gen_modelWeights{:04d}.npz'.format(current_epoch),
                      *lasagne.layers.get_all_param_values(model.net['output']))
 
 # def salgan_batch_iterator(model, train_data, validation_data,epochs = 20, fig=False):

@@ -21,7 +21,6 @@ salmap_size = INPUT_SIZE
 # Resize train/validation files
 
 listImgFiles = [k.split('/')[-1].split('.')[0] for k in glob.glob(os.path.join(pathToImages, '*'))]
-#listTestImages = [k.split('/')[-1].split('.')[0] for k in glob.glob(os.path.join(pathToImages, '*test*'))]
 for currFile in tqdm(listImgFiles):
     tt = dataRepresentation.Target(os.path.join(pathToImages, currFile + '.bmp'),
                                    os.path.join(pathToMaps, currFile + '.bmp'),
