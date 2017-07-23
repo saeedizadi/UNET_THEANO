@@ -56,7 +56,7 @@ def build(inputHeight, inputWidth, input_var,do_dropout=False):
     print "encode_1: {}".format(net['encode_1'].output_shape[1:])
     net['encode_2'] = batch_norm(ConvLayer(net['encode_1'], 1024, 3,pad='same', W=GlorotNormal(gain="relu")))
     print "encode_2: {}".format(net['encode_2'].output_shape[1:])
-    net['upscale1'] = batch_norm(Deconv2DLayer(net['encode_2'],1024, 2, 2, crop="valid", W=GlorotNormal(gain="relu")))
+    net['upscale1'] = batch_norm(Deconv2DLayer(net['encode_2'],512, 2, 2, crop="valid", W=GlorotNormal(gain="relu")))
     print "upscale1: {}".format(net['upscale1'].output_shape[1:])
 
     net['concat1'] = ConcatLayer([net['upscale1'], net['contr_4_2']], cropping=(None, None, "center", "center"))
@@ -65,7 +65,7 @@ def build(inputHeight, inputWidth, input_var,do_dropout=False):
     print "expand_1_1: {}".format(net['expand_1_1'].output_shape[1:])
     net['expand_1_2'] = batch_norm(ConvLayer(net['expand_1_1'],512, 3,pad='same',W=GlorotNormal(gain="relu")))
     print "expand_1_2: {}".format(net['expand_1_2'].output_shape[1:])
-    net['upscale2'] = batch_norm(Deconv2DLayer(net['expand_1_2'], 512, 2, 2, crop="valid", W=GlorotNormal(gain="relu")))
+    net['upscale2'] = batch_norm(Deconv2DLayer(net['expand_1_2'], 256, 2, 2, crop="valid", W=GlorotNormal(gain="relu")))
     print "upscale2: {}".format(net['upscale2'].output_shape[1:])
 
     net['concat2'] = ConcatLayer([net['upscale2'], net['contr_3_2']], cropping=(None, None, "center", "center"))
@@ -74,7 +74,7 @@ def build(inputHeight, inputWidth, input_var,do_dropout=False):
     print "expand_2_1: {}".format(net['expand_2_1'].output_shape[1:])
     net['expand_2_2'] = batch_norm(ConvLayer(net['expand_2_1'], 256, 3,pad='same',W=GlorotNormal(gain="relu")))
     print "expand_2_2: {}".format(net['expand_2_2'].output_shape[1:])
-    net['upscale3'] = batch_norm(Deconv2DLayer(net['expand_2_2'],256, 2, 2, crop="valid",W=GlorotNormal(gain="relu")))
+    net['upscale3'] = batch_norm(Deconv2DLayer(net['expand_2_2'],128, 2, 2, crop="valid",W=GlorotNormal(gain="relu")))
     print "upscale3: {}".format(net['upscale3'].output_shape[1:])
 
     net['concat3'] = ConcatLayer([net['upscale3'], net['contr_2_2']], cropping=(None, None, "center", "center"))
@@ -83,7 +83,7 @@ def build(inputHeight, inputWidth, input_var,do_dropout=False):
     print "expand_3_1: {}".format(net['expand_3_1'].output_shape[1:])
     net['expand_3_2'] = batch_norm(ConvLayer(net['expand_3_1'],128, 3,pad='same', W=GlorotNormal(gain="relu")))
     print "expand_3_2: {}".format(net['expand_3_2'].output_shape[1:])
-    net['upscale4'] = batch_norm(Deconv2DLayer(net['expand_3_2'], 128, 2, 2, crop="valid", W=GlorotNormal(gain="relu")))
+    net['upscale4'] = batch_norm(Deconv2DLayer(net['expand_3_2'], 64, 2, 2, crop="valid", W=GlorotNormal(gain="relu")))
     print "upscale4: {}".format(net['upscale4'].output_shape[1:])
 
     net['concat4'] = ConcatLayer([net['upscale4'], net['contr_1_2']], cropping=(None, None, "center", "center"))

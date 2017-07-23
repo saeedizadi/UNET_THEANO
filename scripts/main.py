@@ -1,18 +1,14 @@
 import os
 import numpy as np
-import sys
 import cPickle as pickle
 import random
 import cv2
 import theano
-import theano.tensor as T
 import lasagne
-from sympy.utilities.iterables import cartes
 from tqdm import tqdm
 from models.model_salgan import ModelSALGAN
 from models.model_bce import ModelBCE
 from evaluation import Evaluation
-import pdb
 import matplotlib
 import argparse
 import glob
@@ -44,7 +40,7 @@ def bce_batch_iterator(model, train_data, validation_data, epochs = 10, fig=Fals
             #Feed data to the model
             G_cost = model.G_trainFunction(batch_input, batch_output)
 
-            e_cost += G_cost;
+            e_cost += G_cost
             n_updates += 1
 
         e_cost /= nr_batches_train
@@ -56,39 +52,45 @@ def bce_batch_iterator(model, train_data, validation_data, epochs = 10, fig=Fals
             np.savez('../weights/gen_modelWeights{:04d}.npz'.format(current_epoch),
                      *lasagne.layers.get_all_param_values(model.net['output']))
 
-# def salgan_batch_iterator(model, train_data, validation_data,epochs = 20, fig=False):
-#     num_epochs = epochs+1
-#     nr_batches_train = int(len(train_data) / model.batch_size)
-#     train_loss_plt, train_acc_plt, val_loss_plt, val_acc_plt = [[] for i in range(4)]
-#     n_updates = 1
-#     for current_epoch in tqdm(range(num_epochs), ncols=20):
-#     g_cost = 0.; d_cost = 0.; e_cost = 0.
-#         random.shuffle(train_data)
-#         for currChunk in chunks(train_data, model.batch_size):
-#             if len(currChunk) != model.batch_size:
-#                 continue
-#             batch_input = np.asarray([x.image.data.astype(theano.config.floatX).transpose(2, 0, 1) for x in currChunk],dtype=theano.config.floatX)
-#             batch_output = np.asarray([y.saliency.data.astype(theano.config.floatX) / 255. for y in currChunk],dtype=theano.config.floatX)
-#             batch_output = np.expand_dims(batch_output, axis=1)
-#             if n_updates % 2 == 0:
-#                 G_obj, D_obj, G_cost = model.G_trainFunction(batch_input, batch_output)
-#                 d_cost += D_obj; g_cost += G_obj; e_cost += G_cost
-#             else:
-#                 G_obj, D_obj, G_cost = model.D_trainFunction(batch_input, batch_output)
-#                 d_cost += D_obj; g_cost += G_obj; e_cost += G_cost
-#             n_updates += 1
-#         g_cost /= nr_batches_train
-#     d_cost /= nr_batches_train
-#     e_cost /= nr_batches_train
-#     #Compute the Jaccard Index on the Validation
-#     v_cost, v_acc = bce_feedforward(model,validation_data,True)
-#
-#     if current_epoch % 5  == 0:
-#             np.savez('./' + DIR_TO_SAVE + '/gen_modelWeights{:04d}.npz'.format(current_epoch),
-#                      *lasagne.layers.get_all_param_values(model.net['output']))
-#             np.savez('./' + DIR_TO_SAVE + '/disrim_modelWeights{:04d}.npz'.format(current_epoch),
-#                      *lasagne.layers.get_all_param_values(model.discriminator['fc5']))
-#     return v_acc
+def salgan_batch_iterator(model, train_data, validation_data, epochs = 20, fig=False):
+    num_epochs = epochs+1
+    nr_batches_train = int(len(train_data) / model.batch_size)
+    n_updates = 1
+    for current_epoch in tqdm(range(num_epochs), ncols=20):
+        g_cost = 0.
+        d_cost = 0.
+        e_cost = 0.
+        random.shuffle(train_data)
+        for currChunk in chunks(train_data, model.batch_size):
+            if len(currChunk) != model.batch_size:
+                continue
+            batch_input = np.asarray([x.image.data.astype(theano.config.floatX).transpose(2, 0, 1) for x in currChunk],dtype=theano.config.floatX)
+            batch_output = np.asarray([y.saliency.data.astype(theano.config.floatX) / 255. for y in currChunk],dtype=theano.config.floatX)
+            batch_output = np.expand_dims(batch_output, axis=1)
+            if n_updates % 2 == 0:
+                G_obj, D_obj, G_cost = model.G_trainFunction(batch_input, batch_output)
+                d_cost += D_obj
+                g_cost += G_obj
+                e_cost += G_cost
+            else:
+                G_obj, D_obj, G_cost = model.D_trainFunction(batch_input, batch_output)
+                d_cost += D_obj
+                g_cost += G_obj
+                e_cost += G_cost
+            n_updates += 1
+        g_cost /= nr_batches_train
+        d_cost /= nr_batches_train
+        e_cost /= nr_batches_train
+        print('\tEpoch: [{0:02}/{1}]\t'
+              'GenCost: {2}\t'
+              'DisCost: {3}\t'
+              'TrainLoss: {4}'.format(current_epoch, num_epochs, g_cost, d_cost, e_cost))
+
+    if current_epoch % 5  == 0:
+            np.savez('../weights' + '/gen_modelWeights{:04d}.npz'.format(current_epoch),
+                     *lasagne.layers.get_all_param_values(model.net['output']))
+            np.savez('../weights'+'/disrim_modelWeights{:04d}.npz'.format(current_epoch),
+                     *lasagne.layers.get_all_param_values(model.discriminator['fc5']))
 
 # def bce_feedforward(model, validation_data, bPrint=False):
 #     nr_batches_val = int(len(validation_data) / model.batch_size)
@@ -117,6 +119,11 @@ def load_weights(net, path, epochtoload):
         param_values = [f['arr_%d' % i] for i in range(len(f.files))]
     lasagne.layers.set_all_param_values(net['output'], param_values)
 
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in xrange(0, len(l), n):
+        yield l[i:i + n]
+
 def main(args):
     if args.mode == 'train':
         print 'Loading training data...'
@@ -132,13 +139,13 @@ def main(args):
         # Create network
         if args.model == 'salgan':
 
-            model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.momentum]
+            model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.alpha]
             model = ModelSALGAN(*model_args)
 
             if args.resume:
                 load_weights(net=model.net['output'], path="weights/gen_", epochtoload=args.resume)
                 load_weights(net=model.discriminator['fc5'], path="weights/disrim_", epochtoload=args.resume)
-            #salgan_batch_iterator(model, train_data, validation_data,epochs=args.num_epochs)
+            salgan_batch_iterator(model, train_data, validation_data, epochs=args.num_epochs)
 
         elif args.model == 'bce':
             model_args = [args.width, args.height, args.batch_size, args.lr, args.regul_term, args.momentum]
@@ -177,7 +184,7 @@ def main(args):
     elif args.mode == 'eval':
         evaluator = Evaluation()
 
-        evaluator(args.gtdir, args.resdir, 'unet')
+        evaluator(args.gtdir, args.resdir, args.suffix)
         evaluator.print_vals()
 
 
@@ -273,6 +280,7 @@ if __name__ == "__main__":
     parser_eval = subparsers.add_parser('eval')
     parser_eval.add_argument('--resdir', type=str, default='../data/results')
     parser_eval.add_argument('--gtdir', type=str, default='../data/mask320x240')
+    parser_eval.add_argument('--suffix', default='unet', type=str)
     
 
 

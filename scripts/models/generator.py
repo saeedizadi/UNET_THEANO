@@ -4,9 +4,7 @@ from lasagne.layers import Upscale2DLayer
 from lasagne.nonlinearities import sigmoid
 import lasagne
 import cPickle
-import vgg16
 import unet
-import densenet
 
 
 #def set_pretrained_weights(net, path_to_model_weights=PATH_TO_VGG16_WEIGHTS):
